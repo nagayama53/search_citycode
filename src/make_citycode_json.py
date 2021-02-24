@@ -42,6 +42,18 @@ class CityCode(object):
             # JSONファイルを吐き出し
             self.out_file(prefecture_key, data)
 
+        # 事業所CSVをJSON化
+        key = settings.JIGYOSYO_FILE_NAME
+
+        # CSVファイルを読み込み
+        jigyo_csv_data = self.read_jigyo_file(key)
+
+        # データ整形
+        jigyo_data = self.make_citycode_dict(key, jigyo_csv_data)
+
+        # JSONファイルを吐き出し
+        self.out_file(key, jigyo_data)
+
 
     def make_citycode_dict(self, prefecture_key, data):
         """
@@ -114,7 +126,29 @@ class CityCode(object):
         file_name = os.path.join(self.csv_dir, file_name_raw)
 
         # データ読み込み
-        data = pd.read_csv(file_name, header=None, usecols=[0, 2])
+        # 常用外漢字が存在するためcp932で読み込み
+        data = pd.read_csv(file_name, encoding="cp932", header=None, usecols=[0, 2])
+
+        return data
+
+
+    def read_jigyo_file(self, key):
+        """
+        引数keyで受けたファイル名のCSVファイルを読み込む
+        事業所郵便番号CSVのデータ形式に合わせ1列目、8列目を取得する
+
+        引数:
+          key ファイル名(文字列型)
+        戻り値:
+          data データ(Pandas DataFrame)
+        """
+        # ファイル名生成
+        file_name_raw = key + ".csv"
+        file_name = os.path.join(self.csv_dir, file_name_raw)
+
+        # データ読み込み
+        # 常用外漢字が存在するためcp932で読み込み
+        data = pd.read_csv(file_name, encoding="cp932", header=None, usecols=[0, 7])
 
         return data
 

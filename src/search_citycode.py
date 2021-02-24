@@ -64,7 +64,6 @@ class SearchCityCode(object):
             M=0,
             N=0,
         )
-        print(result_data)
 
         #  DataFrameをループ
         for num, row in enumerate(result_data.itertuples(name=None)):
@@ -81,25 +80,53 @@ class SearchCityCode(object):
             # 対象都道府県の郵便番号JSONを開く
             city_code_json = self.read_citycode_file(prefecture_code)
 
+            # 市町村コード配列を初期化
+            city_codes = []
+
             # 郵便番号から市町村コードを検索
             try:
                 post_code_dict = city_code_json.get(post_code, None)
 
                 if post_code_dict is None:
-                    # 郵便番号がヒットしない場合は「候補1」にERRORを格納
-                    result_data.iloc[num, 4] = "ERROR"
+                    # 郵便番号がヒットしない場合は事業所郵便番号を調べる
+                    city_codes = self.get_jigyo_citycode(post_code)
                 else:
                     # 郵便番号がヒットした場合候補に値を格納
                     city_codes = post_code_dict["city_codes"]
 
-                    for i, city_code in enumerate(city_codes):
-                        print(city_code)
-                        result_data.iloc[num, 4 + i] = city_code
+                for i, city_code in enumerate(city_codes):
+                    result_data.iloc[num, 4 + i] = city_code
             except Exception:
                 # エラーの場合は「候補1」にERRORを格納
                 result_data.iloc[num, 4] = "ERROR"
 
         return result_data
+
+
+    def get_jigyo_citycode(self, post_code):
+        """
+        事業所郵便番号から市町村コードを検索する
+
+        引数:
+          post_code 郵便番号
+        戻り値:
+          city_codes 市町村コード配列
+        """
+        # 戻り値配列初期化
+        city_codes = []
+
+        # JSONファイルを取得
+        jigyo_json = self.read_citycode_file(settings.JIGYOSYO_FILE_NAME)
+
+        # 市町村コード辞書を取得
+        jigyo_dict = jigyo_json.get(post_code, None)
+
+        if jigyo_dict is None:
+            city_codes = ["ERROR"]
+        else:
+            city_codes = jigyo_dict["city_codes"]
+
+        return city_codes
 
 
     def read_input_file(self, file_name):
@@ -113,7 +140,6 @@ class SearchCityCode(object):
         """
         # データ読み込み
         data = pd.read_csv(file_name, encoding="SHIFT-JIS")
-        print(data)
 
         return data
 
