@@ -69,8 +69,16 @@ class SearchCityCode(object):
         for num, row in enumerate(result_data.itertuples(name=None)):
             # 郵便番号を抽出
             # 7桁ゼロパディング
-            post_code = str(int(row[2]))
-            post_code = post_code.zfill(7)
+            try:
+                post_code = str(int(row[2]))
+                post_code = post_code.zfill(7)
+            except ValueError:
+                # エラーの場合は「候補1」にERRORを格納
+                # 郵便番号がない場合
+                result_data.iloc[num, 4] = "ERROR"
+
+                # 以降はスキップして次ループ
+                continue
 
             # 都道府県コードを抽出
             # 5桁ゼロパディング
